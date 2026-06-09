@@ -1,0 +1,8 @@
+interface:
+  display_name: "Paper Analysis 4SS"
+  short_description: "社科数据清洗、回归与质性分析"
+  brand_color: "#2563EB"
+  default_prompt: "Use $paper-analysis-4ss to clean my social science data, run basic regressions, analyze qualitative materials, and draft results."
+
+policy:
+  allow_implicit_invocation: true
