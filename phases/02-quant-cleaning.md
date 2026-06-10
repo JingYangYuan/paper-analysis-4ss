@@ -27,7 +27,40 @@
 - 连续变量：按理论需要取对数、标准化、中心化。
 - 指数构造：分量方向统一，报告 Cronbach alpha 或构造逻辑。
 
-## 4. 描述统计
+## 4. 变量字典
+
+必须输出 `variable-dictionary.csv`，字段至少包括：
+
+| 字段 | 含义 |
+|---|---|
+| `raw_name` | 原始变量名 |
+| `clean_name` | 清洗后变量名 |
+| `label` | 中文含义 |
+| `role` | Y/X/control/fe/cluster/weight/id/time/mechanism/moderator |
+| `type` | numeric/categorical/text/date |
+| `missing_rule` | 特殊缺失码和处理规则 |
+| `transform` | 取对数、标准化、反向计分、合成指数等 |
+| `source_file` | 来源文件 |
+| `notes` | 口径说明和限制 |
+
+变量字典不要求一次完美，但所有进入模型的变量必须有记录。
+
+## 5. 样本流失表
+
+样本流失表按“可复现筛选步骤”而非自然语言摘要生成：
+
+| step | rule | n_before | n_after | dropped | reason |
+|---|---|---:|---:|---:|---|
+| 0 | raw data |  |  |  | 原始样本 |
+| 1 | keep eligible population |  |  |  | 研究对象界定 |
+| 2 | nonmissing Y |  |  |  | 因变量缺失 |
+| 3 | nonmissing X |  |  |  | 核心解释变量缺失 |
+| 4 | nonmissing controls |  |  |  | 控制变量缺失 |
+| 5 | valid panel/id-time |  |  |  | 面板唯一性 |
+
+如果同一论文需要多个分析样本，分别输出 `sample-flow-main.csv`、`sample-flow-robustness.csv` 或在 `sample_id` 字段区分。
+
+## 6. 描述统计
 
 输出：
 
@@ -38,18 +71,29 @@
 
 所有导出的描述统计保留 3 位小数；N 和频数保留整数。
 
-## 5. 三语言实现
+## 7. 数据质量诊断
 
-- Stata：参考 `templates/stata/analysis-template.do` 的 `01_descriptives` 和 `02_clean` 段。
-- R：参考 `templates/r/analysis-template.R` 的 `load_data()`、`clean_data()`、`make_table1()`。
-- Python：参考 `templates/python/analysis_template.py` 的 `load_data()`、`clean_data()`、`describe_data()`。
+清洗报告至少回答：
 
-## 6. 输出文件
+- 核心变量缺失是否集中在某些群体或年份。
+- 极端值是否来自录入错误、真实极端还是单位混乱。
+- 分类变量是否存在小样本类别，是否需要合并。
+- 面板数据是否有重复 id-time，是否存在严重不平衡。
+- 权重变量是否可用，权重为 0 或缺失的样本如何处理。
+- 清洗动作是否改变主要样本结构。
+
+## 8. 三语言实现
+
+- Stata：参考 `modules/analysis/templates/stata-analysis-template.do` 的读取、样本标记和描述统计段。
+- R：参考 `modules/analysis/templates/r-analysis-template.R` 的 `load_data()`、`clean_data()`、`make_table1()`。
+- Python：参考 `modules/analysis/templates/python-analysis-template.py` 的 `load_data()`、`clean_data()`、`describe_data()`。
+
+## 9. 输出文件
 
 保存到：
 
-- `output/paper-analysis/data/analysis-data.*`
-- `output/paper-analysis/data/variable-dictionary.csv`
-- `output/paper-analysis/tables/table1-descriptives.*`
-- `output/paper-analysis/tables/sample-flow.csv`
-- `output/paper-analysis/reports/cleaning-report-[date].md`
+- `analysis-output/data/analysis-data.*`
+- `analysis-output/data/variable-dictionary.csv`
+- `analysis-output/tables/table1-descriptives.*`
+- `analysis-output/tables/sample-flow.csv`
+- `analysis-output/reports/cleaning-report-[date].md`

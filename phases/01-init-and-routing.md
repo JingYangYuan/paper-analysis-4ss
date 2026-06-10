@@ -5,21 +5,21 @@
 创建目录并初始化日志：
 
 ```bash
-OUTPUT_ROOT="${OUTPUT_ROOT:-output/paper-analysis}"
+OUTPUT_ROOT="${OUTPUT_ROOT:-analysis-output}"
 mkdir -p "$OUTPUT_ROOT"/{data,scripts,tables,figures,reports,qual/codebooks,qual/coded-data,qual/memos,qual/anonymized,qual/reliability}
-mkdir -p output/logs
-LOG_FILE="output/logs/process-log-paper-analysis-4ss-$(date +%Y-%m-%d).md"
+mkdir -p analysis-output/_logs
+LOG_FILE="analysis-output/_logs/process-log-analysis-$(date +%Y-%m-%d).md"
 if [ ! -f "$LOG_FILE" ]; then
-  printf "# Process Log: paper-analysis-4ss\n\n| Time | Step | Decision | Output |\n|---|---|---|---|\n" > "$LOG_FILE"
+  printf "# Process Log: modules/analysis\n\n| Time | Step | Decision | Output |\n|---|---|---|---|\n" > "$LOG_FILE"
 fi
 ```
 
 ## 2. 数据发现
 
-若用户未给路径，先扫描：
+若用户未给路径，扫描当前项目目录寻找候选数据文件：
 
 ```bash
-find . output -maxdepth 4 -type f \( -name "*.csv" -o -name "*.xlsx" -o -name "*.dta" -o -name "*.sav" -o -name "*.rds" -o -name "*.parquet" -o -name "*.txt" -o -name "*.md" -o -name "*.docx" \) 2>/dev/null | head -80
+find . -maxdepth 4 -type f \( -name "*.csv" -o -name "*.xlsx" -o -name "*.dta" -o -name "*.sav" -o -name "*.rds" -o -name "*.parquet" -o -name "*.txt" -o -name "*.md" -o -name "*.docx" \) 2>/dev/null | head -80
 ```
 
 候选较多时，按最近修改时间、文件名中的 `clean`、`analysis`、`访谈`、`transcript`、`data`、`panel` 优先。
