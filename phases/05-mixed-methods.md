@@ -1,5 +1,9 @@
 # Phase 05: 混合方法整合
 
+## 0. 顾问派发闸门
+
+进入混合方法整合前，必须派发或复用 `agents/qual-mixed-consultant.md`，复核定量发现与质性主题的整合逻辑、案例选择、编码变量化和 joint display 呈现。意见必须写入 `agent-synthesis-analysis-[YYYY-MM-DD].md` 后再生成整合矩阵。
+
 ## 1. 设计类型
 
 | 类型 | 用法 |
@@ -49,6 +53,18 @@
 - 不把回归显著性当作机制证明。
 - 混合方法段落必须解释两类证据如何相互校准。
 - 分歧发现要保留，不强行调和。
+
+## 5.1 整合脚本执行门槛
+
+生成 joint display、案例选择表或编码变量化脚本后，必须立即实际执行（涉及 Stata 时走 statamcp 的 `stata_run_file`）：
+
+```bash
+python3 "paper-workspace/04-analysis/scripts/mixed-methods.py"
+# 或
+Rscript "paper-workspace/04-analysis/scripts/mixed-methods.R"
+```
+
+执行结果写入 `paper-workspace/04-analysis/reports/run-log-[date].md`，记录命令、退出码、stdout/stderr 路径、joint display、code-to-variable map 和整合报告。未执行成功时，不得声称定量与质性结果已经完成整合。
 
 ## 6. 输出文件
 

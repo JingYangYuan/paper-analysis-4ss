@@ -130,7 +130,7 @@ IV 的三条件必须同时满足：
 
 ## 10. 输出记录
 
-模型选择必须写入 `analysis-output/reports/model-decision-[date].md` 或过程日志，至少包含：
+模型选择必须写入 `paper-workspace/04-analysis/reports/model-decision-[date].md` 或过程日志，至少包含：
 
 - 为什么该模型匹配因变量和数据结构。
 - 为什么该标准误层级合理。
