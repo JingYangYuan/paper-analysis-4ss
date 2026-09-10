@@ -16,6 +16,7 @@
 | [paper-outline-4ss](https://github.com/JingYangYuan/paper-outline-4ss) | 素材转大纲、证据映射、缺口报告 |
 | **[paper-analysis-4ss](https://github.com/JingYangYuan/paper-analysis-4ss)**（本仓库） | 定量 / 质性 / 混合，Stata · R · Python |
 | [paper-write-4ss](https://github.com/JingYangYuan/paper-write-4ss) | 章节写作、润色、语言扫描、正文净稿 |
+| [paper-check-4ss](https://github.com/JingYangYuan/paper-check-4ss) | 全文审稿、质量门控与精确回流 |
 | [paper-submission-4ss](https://github.com/JingYangYuan/paper-submission-4ss) | Word 导出、体例、投稿清单与信函 |
 | [paper-update-4ss](https://github.com/JingYangYuan/paper-update-4ss) | 待审核更新包，不直接改核心文件 |
 
@@ -41,7 +42,7 @@ git clone https://github.com/JingYangYuan/paper-analysis-4ss.git
 
 - 包内相对路径相对本包根目录解析
 - `master/` 与部分 `references/` 是导出时的协议快照
-- 更新方式：修改总控对应模块后重新导出，不要直接改本仓库
+- 更新方式：修改总控任一模块、家族表、路由或协议后，必须无参数重新导出**全部**独立包并 push 全部 GitHub 仓；不要只改本仓库，也不要只导出改过的那一个。
 
 ## License
 

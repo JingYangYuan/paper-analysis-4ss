@@ -50,9 +50,7 @@ powershell -ExecutionPolicy Bypass -File deploy.ps1 -StataPath "D:\Stata21" -Por
 ## 3. 包源配置（SSC 镜像）
 
 ```stata
-* 设置 SSC 镜像（国内用户）
-net set ado https://stata.pzhao.org/ado/       // 郑凡丁镜像
-* 或保持默认
+* 保持默认
 net set ado https://fmwww.bc.edu/repec/bocode/
 ```
 
