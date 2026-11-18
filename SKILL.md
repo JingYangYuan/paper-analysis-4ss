@@ -1,68 +1,77 @@
 ---
 name: paper-analysis-4ss
-description: 中文社会科学论文数据分析技能。用于结构化数据清洗、描述统计、主回归、中介/机制、调节、异质性、门槛、非线性、政策识别、稳健性检验、质性材料编码、主题/内容分析、混合方法整合和论文结果呈现。支持 Stata、R、Python，内置常用社科基础模型、三语言模板和案例。当用户需要从数据或访谈/文本材料产出论文级表格、图形、代码、方法说明和结果段落时使用。
+description: 中文社会科学论文数据分析技能。用于结构化数据清洗、描述统计、主回归、中介/机制、调节、异质性、门槛、非线性、政策识别、稳健性检验、机器学习与因果机器学习（挑控制变量、挑工具变量、CATE／GATES／BLP）、质性材料编码、主题/内容分析、混合方法整合和论文结果呈现。支持 Stata、R、Python，内置常用社科基础模型、三语言模板和案例。当用户需要从数据或访谈/文本材料产出论文级表格、图形、代码、方法说明和结果段落时使用。
 ---
 
 > **拆分版路径约定**：本包由 `paper-master-4ss/scripts/export_standalone.py` 从 `paper-master-4ss/modules/analysis/` 自动导出，是可独立安装的运行版。包内相对路径（`agents/`、`phases/`、`references/`、`master/` 等）相对本包根目录解析；跨模块路径 `paper-master-4ss/modules/<x>/...` 相对同级安装的 `paper-master-4ss/` 总控包解析。请勿直接编辑本包：修改总控模块后重新导出。
 >
 > **宿主无关约定**：本包不预设宿主，也不在 frontmatter 声明 `tools`/`hooks`/`model` 等宿主专属键。启动时按 `references/runtime-adapter.md` §5 探测当前环境可用能力，再按通用能力名（`read_file`、`search_text`、`web_search`、`run_shell`、`spawn_agent` 等）执行；宿主样例见 `references/agent-software-adapters.md`（样例，非名单）。
 
-# Paper Analysis 4SS
+# Paper Analysis 4SS：社会科学数据分析
 
-你是中文社会科学论文的数据分析助手。你的任务是把结构化数据、面板数据、访谈文本、田野笔记、开放题文本、政策/新闻/档案文本转化为可复现的清洗脚本、基础回归结果、质性编码结果、混合方法整合表和论文结果写作素材。
+> 参数提示：[模式] [数据或文本路径] [可选: stata|r|python]
 
-本技能必须独立工作。
+本模块将结构化数据、访谈记录与开放文本转化为可复现的分析脚本、论文级表图、质性编码产物及结果文字素材。
 
-## 路径约定
+核心约束：
+1. 分析脚本生成后须实际执行，不得仅交付未运行脚本并编写统计结论；
+2. 无法执行时须输出阻断日志、可复现脚本及缺失条件说明，严禁输出虚构数值；
+3. 正文引用的所有统计数值均须可追溯至真实 `run-log` 与输出文件。
 
-本文件中的 `modules/...` 路径默认相对于 `paper-master-4ss/` 根目录解析；若从本模块目录直接运行，也可将同模块路径改用 `agents/...`、`phases/...`、`references/...`、`templates/...`。
+## 执行前提
 
-## 全局输出协议
+1. **路径约定**：`modules/...` 相对于 `paper-master-4ss/` 根目录解析；在本模块目录内单独运行时可使用 `agents/...`、`phases/...`、`references/...`、`templates/...`。
+2. **输出格式**：先读取 `master/output-protocol.md`。分析计划、运行日志摘要、结果说明、质性/混合方法报告、顾问意见、综合文件与最终回复均使用中文 Markdown（变量名、模型名、代码、命令、软件名与统计指标保留原文）；分析流程、模型识别链、稳健性/机制检验路径、质性编码流程、混合方法整合链路与顾问派活链须附 Mermaid 图及 2–4 句中文解释。
+3. **脚本实跑要求**：所有结果须来自真实命令执行（详见 §4.1）。
 
-先读取并遵守 `master/output-protocol.md`。本模块所有分析计划、运行日志摘要、结果说明、质性/混合方法报告、顾问意见、综合文件和最终回复默认使用中文 Markdown；变量名、模型名、代码、命令、软件名和统计指标可保留原文。分析流程、模型识别链、稳健性/机制检验路径、质性编码流程、混合方法整合链路和 agent 派发/综合链路必须使用 Mermaid 图示，并在图后附 2-4 条中文解释。
+## 顾问角色与选派时机
 
-## 0. 多智能体并行触发
+根据变量复杂度、识别策略风险与任务类型按需选派顾问（执行身份以 `references/agent-registry.md` 标准名为准；输入须包含研究问题、数据类型、变量设定及已有脚本或结果表）：
 
-默认按 `master/agent-orchestration.md` 丰富强制派发本模块顾问。遇到复杂数据清洗、因果识别、稳健性检验、质性编码、混合方法整合或论文级结果呈现时，必须并行派发本模块顾问。派发前先读取对应 agent 定义，并把研究问题、数据类型、变量设定、已有脚本或结果表作为输入包。实际派发以 `references/agent-registry.md` 中的 canonical agent name 为准；下表路径只作为角色协议路径。
-
-| 触发场景 | 可派发 agent |
+| 决策风险 / 任务环节 | 对应顾问文件 |
 |---|---|
-| 数据字段、标签、codebook、问卷、既有变量字典查找 | `agents/variable-inventory-consultant.md` |
-| 候选变量映射到 Y/X/control/fe/cluster/weight/id/time/mechanism/mediator/moderator/heterogeneity/threshold/nonlinear/instrument/treatment/post/running/cutoff | `agents/variable-role-mapping-consultant.md` |
-| 缺失、类型、异常值、重复、特殊缺失码、面板唯一性和样本口径预判 | `agents/variable-quality-consultant.md` |
-| 变量清洗、样本口径、缺失和异常值处理复核 | `agents/variable-cleaning-consultant.md` |
-| design/lit/outline/变量发现包中的完整变量蓝图与执行任务表 | `agents/analysis-plan-consultant.md` |
-| 模型选择、识别策略、固定效应和标准误复核 | `agents/identification-model-consultant.md` |
-| 描述统计、基准模型、主回归和基础诊断代码撰写 | `agents/main-regression-code-writer.md` |
-| 中介、机制、调节、异质性、门槛、非线性、交互和分组检验代码撰写 | `agents/mechanism-extension-code-writer.md` |
-| DiD、IV、RDD、PSM、面板、稳健性和安慰剂代码撰写 | `agents/causal-robustness-code-writer.md` |
-| 稳健性、异质性、机制和安慰剂检验复核 | `agents/robustness-consultant.md` |
-| 质性编码、主题分析、混合方法整合 | `agents/qual-mixed-consultant.md` |
-| 表格、图形、统计解释和结果段落 | `agents/result-reporting-consultant.md` |
-| 表格、图形、script-index、结果报告和质量门控导出代码撰写 | `agents/export-reporting-code-writer.md` |
+| 识别字段、解析问卷/codebook、映射 19 类变量角色并预判数据质量（产出 `variable-discovery-pack`） | `agents/variable-discovery-consultant.md` |
+| 复核清洗逻辑、样本筛选、缺失/异常值处理与变量字典定稿 | `agents/variable-cleaning-consultant.md` |
+| 依据上游 `design`/`lit`/`outline` 变量蓝图生成 `analysis-execution-plan` | `agents/analysis-plan-consultant.md` |
+| 裁决模型选择、识别策略、固定效应、标准误与必做/可选检验清单 | `agents/identification-consultant.md` |
+| 按 `task_id` 编写主回归、机制扩展、因果稳健性代码草案 | `agents/code-writer.md` |
+| 质性编码、主题分析、过程追踪与混合方法整合 | `agents/qual-mixed-consultant.md` |
+| 裁决机器学习适用性、防泄漏折分、样本外口径、PDS/DML/IV 选择及 CATE 政策建议边界 | `agents/ml-causal-consultant.md` |
+| 裁决表格规范（CSV 宽表、`display_name`）、作图与结果文字、生成 `script-index` 与导出代码 | `agents/reporting-consultant.md` |
 
-主流程负责综合顾问意见，形成变量发现包、分析执行计划、最终脚本、表图、报告和结果文字。结构化数据清洗必须先走“变量查找三 agent → variable-cleaning → CLI 执行清洗脚本”两段式；回归和扩展检验必须先走“analysis-plan → identification → 多代码 writer → CLI 执行 → reporting/export”流水线。变量角色、核心变量或模型条件不明时，回流到变量发现与清洗复核，不询问用户补选模型选项；只有数据路径、CLI、许可或必要文件完全缺失时才记录阻断或请求最小补充材料。所有顾问意见写入 `paper-workspace/_logs/agents/analysis-[YYYY-MM-DD]/`，并生成 `agent-synthesis-analysis-[YYYY-MM-DD].md`。若当前环境不能真实并行，则按上表顺序完成角色复核，并记录 `sequential-review`。所有顾问意见必须包含 `## 参考库回查`。
+## 不可逆顺序约束
+
+- **清洗阶段**：变量发现（字段清单 / 角色映射 / 质量预判）-> 变量清洗复核 -> 执行命令行清洗脚本。
+- **回归与扩展检验阶段**：分析计划 -> 识别策略裁决 -> 代码编写 -> 命令行执行 -> 结果呈现与导出。
+
+严禁颠倒顺序或跳过变量发现与识别裁决直接生成脚本。
+
+## 变量不明时的处理原则
+
+若核心变量、角色映射或模型条件不明确，须退回变量发现与清洗复核阶段，通过读取数据字段、变量字典、codebook、问卷或上游设计产物补齐依据；仅当数据路径、命令行工具、软件许可或必需文件缺失时，才标记阻断并请求用户补充最小材料。不得用交互选项向用户转嫁「选择 OLS 还是 Logit」等应由研究设计与数据结构决定的技术判断。
+
+## 顾问归档与回查
+
+顾问意见写入 `paper-workspace/_logs/agents/analysis-[YYYY-MM-DD]/`，综合结果写入 `agent-synthesis-analysis-[YYYY-MM-DD].md`（记录共识、分歧、采纳与未采纳理由）。运行环境不支持并行时按序复核并记录 `sequential-review`。每条顾问意见开头须含一行 `参考库回查:`（`base=analysis-2026.10.24` + `tier` + 判据条目号 + 缺口，规则见 `references/agent-registry.md` §2），缺失该行视为无效。
 
 ## 1. 参数解析
 
-从 `$ARGUMENTS` 中提取：
+从 `$ARGUMENTS` 提取以下参数：
 
-| 字段 | 规则 | 默认 |
+| 字段 | 解析规则 | 默认值 |
 |---|---|---|
-| 模式 | `clean`/`describe`/`regression`/`qual`/`mixed`/`robustness`/`export`/`full` | `full` |
-| 数据类型 | `.csv/.xlsx/.dta/.sav/.rds/.parquet` 为结构化；`.txt/.md/.docx` 为文本；多种同时出现为混合 | 自动推断 |
-| 语言 | `stata`/`r`/`python` | `.dta` 或用户提 Stata 时选 Stata；文本和 ML 选 Python；通用默认 R |
-| 核心变量 | `Y=`、`X=`、`controls=`、`fe=`、`cluster=`、`weight=`、`id=`、`time=`、`mediator=`、`moderator=`、`heterogeneity=`、`threshold=`、`instrument=`、`treatment=`、`post=`、`running=`、`cutoff=` | 缺失则从 design/lit/outline、变量发现包、变量字典和研究问题推断；无法推断时回流变量发现与清洗复核 |
-| 质性路径 | `codebook`、`open-coding`、`thematic`、`content`、`reliability`、`llm-coding` | 根据文本材料和需求推断 |
+| 模式 | `clean` / `describe` / `regression` / `ml` / `qual` / `mixed` / `robustness` / `export` / `full` | `full` |
+| 数据类型 | `.csv/.xlsx/.dta/.sav/.rds/.parquet` 为结构化；`.txt/.md/.docx` 为文本；两者兼有为混合 | 自动推断 |
+| 语言 | `stata` / `r` / `python` | `.dta` 或指定 Stata 时用 `stata`；文本与机器学习默认 `python`；其余通用默认 `r` |
+| 核心变量 | `Y=`、`X=`、`controls=`、`fe=`、`cluster=`、`weight=`、`id=`、`time=`、`mediator=`、`moderator=`、`heterogeneity=`、`threshold=`、`instrument=`、`treatment=`、`post=`、`running=`、`cutoff=` | 从上游产物、变量发现包或变量字典推断；缺失则退回变量发现与清洗复核 |
+| 质性路径 | `codebook`、`open-coding`、`thematic`、`content`、`reliability`、`llm-coding` | 按材料与需求推断 |
 | 目标输出 | 表格、图形、结果文字、脚本、报告 | 全部 |
 
-如果缺少数据路径或研究问题，先扫描当前目录和 `paper-workspace/_index/input-registry.md` 中登记的候选数据文件，并读取 `paper-workspace/01-design/`、`02-literature/`、`03-outline/` 中的设计与假设线索；仍无法确定必要数据路径时，记录阻断或只请求最小数据路径，不让用户选择模型选项。
+缺失数据路径或研究问题时，先检索当前目录、`paper-workspace/_index/input-registry.md` 及 `01-design/`、`02-literature/`、`03-outline/`；仍无法确定时记录阻断并请用户提供最小数据路径。
 
-## 2. 输出目录
+## 2. 输出目录与双日志
 
-所有输出遵守 `master/output-protocol.md`：报告和日志摘要使用中文 Markdown；分析流程、模型识别链、稳健性/机制检验路径和混合方法整合链路必须包含 Mermaid 图示。统计表、图形文件、变量字典和回归结果继续使用既有表格、图片或数据文件格式。
-
-所有模式先创建：
+遵守 `master/output-protocol.md`（报告使用中文 Markdown，关键分析链附 Mermaid 图，表图保留标准数据/图形格式）。首次执行须初始化目录：
 
 ```bash
 OUTPUT_ROOT="${OUTPUT_ROOT:-paper-workspace/04-analysis}"
@@ -70,123 +79,118 @@ mkdir -p "$OUTPUT_ROOT"/{data,scripts,tables,figures,reports,qual/codebooks,qual
 mkdir -p paper-workspace/_logs
 ```
 
-过程日志保存到 `paper-workspace/_logs/process-log-analysis-[YYYY-MM-DD].md`。每个关键决策记录：数据来源、样本口径、变量构造、模型选择、标准误、质性编码规则、输出文件。
+- **过程日志**：写入 `paper-workspace/_logs/process-log-analysis-[YYYY-MM-DD].md`，记录数据来源、样本口径、变量构造、模型选择、标准误、质性编码规则与输出文件。
+- **运行日志**：写入 `paper-workspace/04-analysis/reports/run-log-[YYYY-MM-DD].md`，每次脚本运行后**即时记录**：执行命令、脚本路径、退出码、stdout/stderr 路径、产物清单及失败原因（不得事后补写，该日志为 `post-bash` 审计依据）。
 
-运行日志保存到 `paper-workspace/04-analysis/reports/run-log-[YYYY-MM-DD].md`。每次脚本执行必须记录命令、CLI 路径、退出码、stdout/stderr 路径、生成产物和失败原因。
+## 3. 模块结构
 
-## 3. 模块目录
-
-analysis 模块只保留三类资源：
-
-| 目录 | 用途 |
+| 目录 | 职能 |
 |---|---|
-| `phases/` | 执行流程：初始化、清洗、回归、质性、混合方法、导出门控 |
-| `references/` | 按需读取的知识库：模型路由与诊断阈值、质性方法、报告规范、语言生态、R 运行与绘图、Stata 执行通道（statamcp 优先） |
-| `templates/` | 按流程与子流程拆分的三语言模板库 (Stata/R/Python)：`01-init`、`02-clean-describe`、`03-regression` 九个子流程（含 `08-spatial`）、`04-qual`、`05-mixed`、`06-export` |
+| `phases/` | 阶段执行手册（初始化、清洗、回归、机器学习与因果 ML、质性、混合方法、导出门控） |
+| `references/` | 模型路由与诊断阈值、识别设计协议族（DiD 九步 / IV 三阶段 / RDD 四阶段 / 合成控制八动作 / shift-share 两路径 / 宽严度五步 / 协变量三步）与高级方法目录（20 族 139 条）、机器学习与因果 ML 方法库（`ml-causal-ml-methods.md`）、质性方法、报告规范与三语言生态配置 |
+| `templates/` | 三语言（Stata / R / Python）可执行脚本模板：`01-init`、`02-clean-describe`、`03-regression`（含 `08-spatial`）、`07-ml`（4 个子流程）、`04-qual`、`05-mixed`、`06-export` |
 
-## 4. 工作流路由
+## 4. 模式路由与按需参考
 
-| 模式 | 执行文件 | 产出 |
+先读取 [01-init-and-routing.md](phases/01-init-and-routing.md)，再按选定模式读取对应阶段文件：
+
+| 模式 | 阶段文件 | 核心产出 |
 |---|---|---|
-| `clean` | [02-quant-cleaning.md](phases/02-quant-cleaning.md) | 清洗脚本、变量字典、样本流失表、分析数据 |
-| `describe` | [02-quant-cleaning.md](phases/02-quant-cleaning.md) | 描述统计、相关矩阵、基础图 |
-| `regression` | [03-basic-regression.md](phases/03-basic-regression.md) | 分析执行计划、描述统计、主回归、中介/机制、调节、异质性、门槛、非线性、政策识别、稳健性、表图导出 |
-| `qual` | [04-qual-analysis.md](phases/04-qual-analysis.md) | 匿名化文本、编码本、编码数据、主题/内容分析、信度报告 |
-| `mixed` | [05-mixed-methods.md](phases/05-mixed-methods.md) | joint display、案例选择、编码变量化、整合解释 |
-| `robustness` | [03-basic-regression.md](phases/03-basic-regression.md) | 稳健性、异质性、机制、安慰剂和设计蓝图要求的扩展检验 |
-| `export` | [06-export-and-quality-gates.md](phases/06-export-and-quality-gates.md) | 表图导出、方法说明、中文结果段落 |
-| `full` | 依次执行 01-06 | 完整论文分析包 |
+| `clean` | [02-quant-cleaning.md](phases/02-quant-cleaning.md) | 清洗脚本、变量字典、样本流失表、清洗后数据 |
+| `describe` | [02-quant-cleaning.md](phases/02-quant-cleaning.md) | 描述统计、相关矩阵、基础图形 |
+| `regression` | [03-basic-regression.md](phases/03-basic-regression.md) | 分析执行计划、主回归、中介/调节/异质性/门槛/非线性/政策识别、稳健性与表图导出 |
+| `qual` | [04-qual-analysis.md](phases/04-qual-analysis.md) | 去标识化文本、编码本、编码数据、主题/内容分析、信度报告 |
+| `mixed` | [05-mixed-methods.md](phases/05-mixed-methods.md) | joint display、案例选择、编码变量化与整合解释 |
+| `robustness` | [03-basic-regression.md](phases/03-basic-regression.md) | 稳健性、异质性、机制、安慰剂及设计蓝图要求的扩展检验 |
+| `ml` | [07-ml-and-causal-ml.md](phases/07-ml-and-causal-ml.md) | 折分方案、超参调优、样本外评估、PDS/DML/IV 选择、CATE/GATES/BLP、ML 宽表与方法说明 |
+| `export` | [06-export-and-quality-gates.md](phases/06-export-and-quality-gates.md) | 成品表图导出、方法说明与中文结果段落 |
+| `full` | 依次执行 01–06 | 完整论文分析包 |
 
-先读 [01-init-and-routing.md](phases/01-init-and-routing.md)，再按模式读取对应 phase。方法细节按需读取：
+**因果识别前置规则**：若研究设计命中 `references/quantitative-model-router.md` §12 分流表（DiD / IV / RD / 合成控制 / shift-share / 宽严度 / 可观测选择等），`regression` 与 `robustness` 模式在编写代码前须先生成 `identification-protocol-pack-[date].md`（包含目标参数、假设版本、必做诊断、退出判据初判与结论适用范围），交由 `paper-analysis-identification-consultant` 裁决（详见 `phases/03-basic-regression.md` §2.5）。纯描述、无因果声称关联及质性路径不触发此规则。
 
-- 模型选择与诊断：[quantitative-model-router.md](references/quantitative-model-router.md) — 含快速决策树、因变量类型路由、诊断阈值、内生性判断框架、面板模型选择逻辑、空间依赖判断框架
-- 模板库索引：[templates/README.md](templates/README.md)；回归子流程索引：[03-regression/README.md](templates/03-regression/README.md) — 先由 `00-plan-dispatch` 读取 `analysis-execution-plan`，再按主回归、非线性、面板、因果识别、机制/异质性、稳健性和导出子流程运行
-- 质性方法：[qualitative-methods.md](references/qualitative-methods.md) — **路由索引**，按研究阶段分发到四个分文件：`qualitative-routing-design.md`（路由与设计）、`qualitative-data-collection.md`（数据收集协议）、`qualitative-analysis-methods.md`（扎根理论/主题分析/框架分析/内容分析/编码本/LLM编码）、`qualitative-quality-integration.md`（可信性保证/过程追踪/混合方法/个案/行动研究/口述史/引文规则/反模式）
-- 报告规范：[quantitative-reporting-standards.md](references/quantitative-reporting-standards.md) — 含数值格式规范、9种模型表模板(OLS/Logit/面板/IV/DID/RDD/空间/中介/调节)、所有诊断结果的报告位置与格式、稳健性报告结构、图形规范(配色/DPI/注) 、11类段落模板(基准/非线性/FE/IV/DID/多期DID/RDD/空间/中介/调节/稳健性)、质性+混合方法段模板、补充材料与可复现性声明、英文段落模板、避免事项总表
-- Python 运行环境与依赖安装：[python-ecosystem-setup.md](references/python-ecosystem-setup.md)
-- R 运行环境与依赖安装：[r-ecosystem-setup.md](references/r-ecosystem-setup.md)
-- Stata 执行通道（statamcp 优先）与依赖安装：[stata-ecosystem-setup.md](references/stata-ecosystem-setup.md)
+按需参考文档（禁止一次性全量载入）：
+- **模型选择与诊断**：[quantitative-model-router.md](references/quantitative-model-router.md)
+- **机器学习方法库（`ml` 模式专用）**：[ml-causal-ml-methods.md](references/ml-causal-ml-methods.md)（含进入三条件、五条纪律、特征工程、正则化、集成、因果 ML、异质性、判据 C24–C31 及报告口径）
+- **模板索引**：[templates/README.md](templates/README.md) 与 [03-regression/README.md](templates/03-regression/README.md)
+- **质性方法**：[qualitative-routing-design.md](references/qualitative-routing-design.md)（路由至 `qualitative-analysis-methods.md` 与 `qualitative-quality-integration.md`）
+- **报告规范**：[quantitative-reporting-standards.md](references/quantitative-reporting-standards.md)
+- **语言环境配置**：[python-ecosystem-setup.md](references/python-ecosystem-setup.md)、[r-ecosystem-setup.md](references/r-ecosystem-setup.md)、[stata-ecosystem-setup.md](references/stata-ecosystem-setup.md)
 
-## 4.1 执行硬门槛（Stata 走 statamcp）
+### 4.1 强制实跑要求
 
-写出任何分析脚本后，必须立即实际执行；不得只生成“待运行”脚本后声称得到结果。Stata 统一经 Stata MCP（statamcp）执行。
-
-| 语言 | 运行方式 | 缺失处理 |
+| 分析语言 | 执行方式 | 环境缺失或失败时的处理 |
 |---|---|---|
-| Stata | statamcp：`.do` 文件用 `stata_run_file`（传 `file_path` 与 `working_dir`，长任务显式给 `timeout`），环境探测用 `stata_run_selection` | 先按 `references/stata-ecosystem-setup.md` §1 安装配置 statamcp 并按 §2 验收；验收不通过时记录阻断和安装指引 |
-| R | `Rscript "script.R"` | 若无 `Rscript`，按 `references/r-ecosystem-setup.md` 安装 R；缺包时在脚本或日志中安装/记录 |
-| Python | `python3 "script.py"` | 若无 `python3`，按 `python-ecosystem-setup.md` 安装；依赖缺失时创建 venv 并用 `pip` 安装 |
+| Stata | 统一经 `statamcp`：`.do` 文件用 `stata_run_file`（传 `file_path` 与 `working_dir`，长任务显式设置 `timeout`）；环境探测用 `stata_run_selection` | 按 `references/stata-ecosystem-setup.md` §1–§2 安装配置与验收；未通过则输出阻断说明与安装指引 |
+| R | `Rscript "script.R"` | 按 `references/r-ecosystem-setup.md` 安装或补齐依赖并记录 |
+| Python | `python3 "script.py"` | 按 `references/python-ecosystem-setup.md` 配置虚拟环境与依赖 |
 
-所有表格、图形、统计数值和结果段落必须来自已执行脚本。若 statamcp、许可、数据或依赖导致无法执行，只能交付阻断日志、可复现脚本和安装/补数步骤，不得伪造结果。
+所有表格、图形、数值与结果段落必须源于已成功执行的脚本；因缺少许可、数据或依赖导致无法运行时，仅交付阻断日志、可复现脚本及缺失项清单。
 
-### 4.2 Stata 双总代码交付协议（默认生产架构）
+### 4.2 Stata 默认双总代码结构
 
-Stata 生产交付默认采用双总代码体系：`paper-workspace/04-analysis/scripts/01_clean_and_prepare_master.do`（全量数据导入、审计真实性、变量标准化、缩尾、导出表 1-3 描述与共线性诊断）与 `paper-workspace/04-analysis/scripts/02_empirical_analysis_master.do`（reghdfe/ivreghdfe 全套实证回归、导出表 4 至表 N 全部宽表，可另附绘图脚本）。两个总代码均经 statamcp `stata_run_file` 实际执行并写入 run-log；`templates/03-regression/` 子流程模板保留为构建素材与派发参考。高维固定效应统一 `reghdfe`、工具变量统一 `ivreghdfe`；机制默认江艇（2022）两步法；调节默认四列递进规范。
+Stata 生产交付默认拆分为两份主脚本，均须通过 `stata_run_file` 实际运行并记入 `run-log`（`templates/03-regression/` 下模板仅作构建素材）：
+- `paper-workspace/04-analysis/scripts/01_clean_and_prepare_master.do`：全量数据导入、真实性核查、变量构造与标准化、缩尾处理，导出表 1–3 描述统计与共线性诊断。
+- `paper-workspace/04-analysis/scripts/02_empirical_analysis_master.do`：基于 `reghdfe` / `ivreghdfe` 执行基准回归及扩展实证检验，导出表 4 至表 N 论文宽表（可另附绘图脚本）。
 
-## 5. 核心边界
+默认技术口径：高维固定效应采用 `reghdfe`、工具变量采用 `ivreghdfe`、机制检验默认江艇（2022）两步法、调节效应默认四列递进设定。
 
-必须做到：
+## 5. 执行约束与职责边界
 
-- 结构化数据分析前，完成变量存在性、类型、缺失、异常值、重复、样本筛选和面板唯一性检查。
-- 二元、有序、多分类非线性模型必须报告边际效应或预测概率；原始 logit/probit 系数不能作为唯一解释。
-- 导出的回归表必须在系数下方显示 t/z 统计值；标准误类型、聚类层级和权重只在表注、正文或日志中说明。
-- 所有导出的描述统计、系数、边际效应、t/z 统计值和比例默认保留 3 位小数；样本量、频数保留整数。
-- 回归表默认导出为 CSV，但 CSV 内容必须采用论文宽表结构：表题、模型编号列、因变量列名、变量系数行、括号内 t/z 值行、固定效应行、观测值行和中文注释行；HTML、TeX、DOCX 只作为附加格式。
-- 回归宽表必须逐行保留控制变量；固定效应用中文行名汇总为“是/否”；观测值写为“观测值”；R²/pseudo R²/within R²/adjusted R² 仅在模型适用时保留，不适用时不强制输出空行。
-- 文档和模板示例不得固化某个项目的具体变量名；真实项目导出的表格、图轴、结果报告和截图使用可发表展示名，优先采用 `variable-dictionary.csv` 的 `display_name`、数据标签或清洗后的变量名。`display_name` 是发表展示名，不是匿名化角色名。
-- 访谈、田野笔记、开放题文本进入 AI 阅读或 LLM 辅助编码前必须先去标识化；不得读取或展示真实身份映射表。
-- 质性分析必须保留编码本、编码到原文摘录映射、分析备忘录和信度/复核记录。
-- 混合方法必须输出定量发现与质性主题的整合矩阵，而不是把两部分并排罗列。
+**强制执行规范**：
+- 结构化数据分析前须核查变量存在性、类型、缺失、异常值、重复值、样本筛选及面板唯一性；
+- 二元、有序及多分类非线性模型须报告边际效应或预测概率，不得仅报告原始系数；
+- 回归表在系数下方括号内报告 t/z 统计值；标准误类型、聚类层级与权重注明于表注、正文或日志，不嵌入系数单元格；
+- 描述统计、系数、边际效应、t/z 值及比例默认保留 3 位小数，样本量与频数保留整数；
+- 回归表默认导出 CSV，内容按论文宽表排版（表题、模型编号列、因变量列名、系数行、括号内 t/z 行、固定效应「是/否」行、观测值行、中文注释行）；HTML/TeX/DOCX 仅作辅助格式；
+- 宽表中逐行保留控制变量，固定效应用中文行名汇总为「是/否」，样本量行统一标注「观测值」，R² 类指标仅在适用模型保留；
+- 文档与模板不得硬编码特定项目变量名；正式导出表格、图轴与报告使用可发表展示名（优先读取 `variable-dictionary.csv` 的 `display_name`、数据标签或清洗后变量名）；
+- 访谈、田野笔记与开放题文本在进入模型阅读或 LLM 辅助编码前必须完成去标识化，不得读取或展示真实身份映射表；
+- 质性分析须保留编码本、编码—原文摘录映射、分析备忘录与信度复核记录；
+- 混合方法须输出定量发现与质性主题的整合矩阵（joint display），不得简单并列罗列；
+- `ml` 模式须写明折分方案、随机种子、超参搜索空间与预算；预处理仅在训练折内拟合，测试集仅使用一次；
+- `ml` 因果估计结果须与基准 OLS 并表呈现，并注明正交化对象与交叉拟合折数；折间波动过大时仅报告区间；
+- `ml` 异质性结果须同时报告 GATES 分位组效应、BLP 检验与重叠诊断，缺少重叠诊断不得给出个体层面政策建议。
 
-不得越界：
+**职责边界**：
+- 本模块负责常规清洗与论文分析数据构建，不承接复杂原始数据库的整体重构；
+- 高级贝叶斯、SEM、深度学习（CNN/RNN/BERT 微调）、图像识别及网络分析仅作可选扩展，不纳入核心可执行流程（表格数据正则化、树集成、因果 ML 与异质性政策效应归入 `ml` 核心流程，见 `phases/07-ml-and-causal-ml.md`）；
+- 严禁虚构变量、访谈摘录、统计指标与显著性。
 
-- 不承诺复杂数据库全套原始数据重构；只做常规清洗和论文分析数据构建。
-- 高级贝叶斯、SEM、复杂机器学习、深度文本模型、网络分析只作为可选扩展，不作为核心流程。
-- 不虚构变量、访谈摘录、模型结果或显著性；无法从文件和已执行脚本得到的结果不得写成结果，只能标注为未执行阻断或需补充数据。
+## 6. 模板与命令执行协议
 
-## 6. 模板
+优先复用 [templates/README.md](templates/README.md) 中拆分的三语言模板库：
 
-优先复用 [templates/README.md](templates/README.md) 中按流程拆分的真实可执行三语言模板库。旧的三份入口文件仅作为轻量索引和迁移说明，不再承载清洗、回归、因果识别和导出的大段实现。
-
-| 流程 | 模板入口 | 用途 |
+| 流程 | 模板路径 | 用途 |
 |---|---|---|
-| 初始化 | `templates/01-init/` | 创建 `paper-workspace/04-analysis` 输出结构和初始化报告 |
-| 清洗描述 | `templates/02-clean-describe/` | 真实读取数据、清洗、变量字典、样本流失表、清洗报告和描述统计 |
-| 回归执行 | `templates/03-regression/README.md` | 九个真实可执行子流程：dispatch、主回归、非线性、面板、因果、机制/异质性、稳健性、空间计量（`templates/03-regression/08-spatial/`）、导出 |
-| 质性分析 | `templates/04-qual/` | 去标识化、编码本、编码数据、备忘录和信度报告 |
-| 混合方法 | `templates/05-mixed/` | joint display 和整合解释 |
-| 导出门控 | `templates/06-export/` | 质量门控、可声称内容和产物追溯 |
+| 初始化 | `templates/01-init/` | 创建 `04-analysis` 输出结构与初始化报告 |
+| 清洗描述 | `templates/02-clean-describe/` | 读取数据、清洗、变量字典、样本流失表与描述统计 |
+| 回归执行 | `templates/03-regression/README.md` | 9 个可执行子流程（dispatch、主回归、非线性、面板、因果、机制/异质性、稳健性、空间计量 `08-spatial/`、导出） |
+| 机器学习与因果 ML | `templates/07-ml/` | 4 个子流程（监督学习、PDS/DML/IV 选择、CATE/GATES/BLP、ML 宽表与方法说明；语言覆盖差异见 `templates/07-ml/README.md`） |
+| 质性分析 | `templates/04-qual/` | 去标识化、编码本、编码数据、备忘录与信度报告 |
+| 混合方法 | `templates/05-mixed/` | joint display 与整合解释 |
+| 导出门控 | `templates/06-export/` | 交付前检查、声称边界与产物追溯 |
 
-每个具体脚本都采用“配置块 + CLI 参数覆盖”：`--data`、`--plan`、`--dict`、`--out-root`、`--run-log`、`--slug`、`--tasks`。生产执行时，将需要的子流程脚本复制或改写到 `paper-workspace/04-analysis/scripts/` 后运行；若变量角色、依赖或软件许可不足，脚本直接报错；阻断原因由 agent 记入 run-log-[date].md，不得输出虚构结果。
+生产执行时将对应脚本复制或改写至 `paper-workspace/04-analysis/scripts/` 后运行（统一支持 `--data`、`--plan`、`--dict`、`--out-root`、`--run-log`、`--slug`、`--tasks` 命令行参数）。
 
-Stata 执行入口固定为 statamcp：
+**Stata（`statamcp`）执行细节**：
+1. 生产逻辑写入 `.do` 文件，调用 `stata_run_file` 并明确传入 `file_path`、`working_dir` 与 `timeout`（默认 600 秒，复杂任务调至 1800 秒以上）；
+2. 环境探测或单行测试使用 `stata_run_selection`，不得替代 `.do` 文件执行生产逻辑；
+3. 并行子任务为各任务分配独立 `session_id`，使用 `stata_session(action=list/destroy)` 管理残留会话；
+4. 每次调用的返回输出、报错信号（如 `r(...)`）与产物路径须即时写入 `run-log-[date].md`。
 
-1. 生产逻辑必须写入 `.do` 文件后调用 `stata_run_file` 执行：
-   - `file_path`：脚本路径，如 `paper-workspace/04-analysis/scripts/main-analysis.do`。
-   - `working_dir`：`.do` 内相对路径的基准目录（通常是脚本所在目录或 `paper-workspace/04-analysis`），使数据、表格、图形的相对路径与脚本设计一致。
-   - `timeout`：默认 600 秒；重回归、Bootstrap、模拟任务显式调大（如 1800）。
-2. 环境探测与单点验证用 `stata_run_selection`（如 `display 1+1`）；不得用交互片段替代生产 `.do`。
-3. 并行子流程为每个任务指定独立 `session_id`；用 `stata_session`（action=list）检查会话状态，残留会话用 action=destroy 清理后再续跑。
-4. 每次调用的返回输出、失败信号（Stata `r(...)`、报错文本）和产物路径写入 `run-log-[date].md`。
-
-安装配置与验收见 `references/stata-ecosystem-setup.md`。
-
-涉及多条 Stata 命令时必须写入 `.do` 文件经 `stata_run_file` 运行，不用 `stata_run_selection` 测试生产逻辑。
-
-R 与 Python 也必须以脚本文件执行，不用交互式片段替代生产逻辑：
+R 与 Python 同样须以完整脚本文件执行：
 
 ```bash
 Rscript "path/to/analysis.R"
 python3 "path/to/analysis.py"
 ```
 
-## 7. 交付格式
+## 7. 交付汇报清单
 
-最终回复要列出：
-
-1. 已生成或应生成的脚本路径。
-2. 主要表格、图形、质性编码和报告路径。
-3. 关键模型/编码决策。
-4. 已通过和未通过的质量门控。
-5. 结果段落中哪些结论来自实际运行，哪些因 statamcp、许可、数据或依赖阻断而不能声称。
-6. 交给 `write` 模块的正文可用定性表述、表图占位和不得夸大的结果边界；统计参数进入表格或附录，不直接写成正文行内参数堆叠。
+1. 已生成及已运行的脚本路径；
+2. 主要表格、图形、质性编码产物与分析报告路径；
+3. 关键模型设定或质性编码决策；
+4. `post-bash` 审计与交付前检查的通过及未通过项；
+5. 哪些结论源于真实脚本执行，哪些因环境、许可、数据或依赖受阻而不得声称；
+6. 移交 `write` 的可用正文表述、表图占位与结果声称边界（统计参数入表或附录，正文不堆砌行内参数）；
+7. `ml` 模式额外交付：`tables/ml-run-manifest.csv`（各表产出状态与未产出原因）、`reports/ml-methods-note.md`（方法说明草稿）及未执行清单阻断说明（未列入清单的表格数字严禁进入正文）。
